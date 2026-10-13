@@ -1,4 +1,7 @@
 #include "Product.h"
+#include "Database.h"
+#include "WarehouseService.h"
+#include <QSqlQuery>
 #include <QtTest>
 
 class InventoryTest : public QObject
@@ -8,6 +11,100 @@ public:
     InventoryTest() = default;
     explicit InventoryTest(QObject *parent) : QObject(parent) {}
 private slots:
+    void salesAreAtomic()
+    {
+        Database database(":memory:");
+        QVERIFY2(database.open().isEmpty(), "Database initialization failed");
+        WarehouseService service(database.connection());
+        QVERIFY(service.login("admin", "admin").isEmpty());
+        QString error;
+        auto products = service.products(error);
+        QVERIFY(error.isEmpty());
+        QVERIFY(products.size() == 10);
+        const Product product = products.front();
+        Sale sale("<Client>", false);
+        sale.setItems({SaleItem(product.id(), 2)});
+        QVERIFY(service.registerSale(sale).isEmpty());
+        QVERIFY(sale.id() > 0);
+        Product current;
+        QVERIFY(ProductRepository(database.connection()).find(product.id(), current, error));
+        QCOMPARE(current.quantity(), product.quantity() - 2);
+        const QString receipt = service.receipt(sale.id(), false, error);
+        QVERIFY(error.isEmpty());
+        QVERIFY(receipt.contains("&lt;Client&gt;"));
+        QVERIFY(!service.registerSale(sale).isEmpty());
+
+        Sale tooMany("Client", false);
+        tooMany.setItems({SaleItem(product.id(), current.quantity() + 1)});
+        QVERIFY(!service.registerSale(tooMany).isEmpty());
+        QCOMPARE(tooMany.id(), 0);
+        const int remaining = current.quantity();
+        QVERIFY(ProductRepository(database.connection()).find(product.id(), current, error));
+        QCOMPARE(current.quantity(), remaining);
+
+        QSqlQuery query(database.connection());
+        QVERIFY(query.exec("CREATE TRIGGER reject_item BEFORE INSERT ON sale_items BEGIN SELECT RAISE(ABORT,'test rollback'); END"));
+        Sale rejected("Client", false);
+        rejected.setItems({SaleItem(product.id(), 1)});
+        QVERIFY(!service.registerSale(rejected).isEmpty());
+        QCOMPARE(rejected.id(), 0);
+        QVERIFY(ProductRepository(database.connection()).find(product.id(), current, error));
+        QCOMPARE(current.quantity(), remaining);
+        QVERIFY(query.exec("SELECT COUNT(*) FROM sales"));
+        QVERIFY(query.next()); QCOMPARE(query.value(0).toInt(), 1);
+        QVERIFY(query.exec("DROP TRIGGER reject_item"));
+
+        Report report(QDate::currentDate(), QDate::currentDate());
+        QVERIFY(service.generateReport(report).isEmpty());
+        QCOMPARE(report.revenue(), sale.total());
+        QCOMPARE(report.profit(), sale.total() - 2 * product.deliveryPrice());
+        QCOMPARE(report.unitsSold(), qint64(2));
+        QCOMPARE(service.reports(error).size(), size_t(1));
+        QVERIFY(!service.deleteProduct(product.id()).isEmpty());
+    }
+    void invalidCart()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("cashier","cashier").isEmpty());
+        Sale sale("Client", false);
+        QVERIFY(!service.registerSale(sale).isEmpty());
+        sale.setItems({SaleItem(1,0)});
+        QVERIFY(!service.registerSale(sale).isEmpty());
+        sale.setItems({SaleItem(1,1),SaleItem(1,1)});
+        QVERIFY(!service.registerSale(sale).isEmpty());
+        sale.setItems({SaleItem(9999,1)});
+        QVERIFY(!service.registerSale(sale).isEmpty());
+    }
+    void saleSnapshotsSurviveProductEdits()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        QString error;
+        Product product;
+        QVERIFY(ProductRepository(database.connection()).find(1,product,error));
+        Sale sale("Client",false); sale.setItems({SaleItem(1,2)});
+        QVERIFY(service.registerSale(sale).isEmpty());
+        const QString original = service.receipt(sale.id(),false,error);
+        product.setName("Changed"); product.setSku("CHANGED"); product.setDeliveryPrice(9000);
+        product.setSalePrice(10000);
+        QVERIFY(service.saveProduct(product).isEmpty());
+        QCOMPARE(service.receipt(sale.id(),false,error),original);
+        Report report(QDate::currentDate(),QDate::currentDate());
+        QVERIFY(service.generateReport(report).isEmpty());
+        QCOMPARE(report.revenue(),qint64(200)); QCOMPARE(report.profit(),qint64(100));
+    }
+    void uniqueSkuAndDatabaseIsolation()
+    {
+        Database first(":memory:"), second(":memory:");
+        QVERIFY(first.open().isEmpty()); QVERIFY(second.open().isEmpty());
+        Product duplicate(0,"Duplicate","P001",1,"Supplier",1,2);
+        QVERIFY(!ProductRepository(first.connection()).save(duplicate).isEmpty());
+        Product unique(0,"Unique","UNIQUE",1,"Supplier",1,2);
+        QVERIFY(ProductRepository(first.connection()).save(unique).isEmpty());
+        QString error;
+        QCOMPARE(ProductRepository(first.connection()).all(error).size(), size_t(11));
+        QCOMPARE(ProductRepository(second.connection()).all(error).size(), size_t(10));
+    }
     void validation_data()
     {
         QTest::addColumn<QString>("name");

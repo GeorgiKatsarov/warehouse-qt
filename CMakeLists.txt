@@ -10,7 +10,10 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Core Sql Widgets Test)
 enable_testing()
 
 add_library(warehouse_core STATIC core/Environment.h core/Environment.cpp
-    core/Product.h core/Product.cpp core/User.h core/User.cpp core/Discount.h core/Discount.cpp)
+    core/Product.h core/Product.cpp core/User.h core/User.cpp core/Discount.h core/Discount.cpp
+    core/Sale.h core/Sale.cpp core/Database.h core/Database.cpp
+    core/ProductRepository.h core/ProductRepository.cpp core/UserRepository.h core/UserRepository.cpp
+    core/SaleRepository.h core/SaleRepository.cpp core/WarehouseService.h core/WarehouseService.cpp)
 target_include_directories(warehouse_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/core)
 target_link_libraries(warehouse_core PUBLIC Qt6::Core Qt6::Sql)
 

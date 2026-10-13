@@ -1,4 +1,6 @@
 #include "Discount.h"
+#include "Database.h"
+#include "WarehouseService.h"
 #include <QtTest>
 #include <memory>
 #include <limits>
@@ -10,6 +12,19 @@ public:
     DiscountsTest() = default;
     explicit DiscountsTest(QObject *parent) : QObject(parent) {}
 private slots:
+    void swappingStrategyChangesTotal()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        Sale sale("Client",true); sale.setItems({SaleItem(1,10)});
+        QVERIFY(service.previewSale(sale).isEmpty()); QCOMPARE(sale.total(),qint64(1000));
+        service.setDiscountStrategy(std::make_unique<QuantityDiscount>());
+        QVERIFY(service.previewSale(sale).isEmpty()); QCOMPARE(sale.total(),qint64(950));
+        service.setDiscountStrategy(std::make_unique<VipDiscount>());
+        QVERIFY(service.previewSale(sale).isEmpty()); QCOMPARE(sale.total(),qint64(900));
+        service.setDiscountStrategy(nullptr);
+        QVERIFY(service.previewSale(sale).isEmpty()); QCOMPARE(sale.total(),qint64(1000));
+    }
     void quantity_data()
     {
         QTest::addColumn<int>("quantity"); QTest::addColumn<qint64>("expected");

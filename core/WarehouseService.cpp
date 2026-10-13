@@ -91,6 +91,8 @@ QString WarehouseService::registerSale(Sale &sale)
     Sale prepared = sale;
     error = calculate(prepared);
     if (error.isEmpty()) {
+        if (prepared.customerName().trimmed().isEmpty())
+            prepared.setCustomerName(message("Клиент на дребно"));
         prepared.setUserId(m_currentUser->id());
         prepared.setCreatedAt(QDateTime::currentDateTime());
         for (const SaleItem &item : prepared.items()) {

@@ -18,4 +18,6 @@ private:
     WarehouseService *m_service = nullptr;
     void build();
     QWidget *productsTab();
+    QWidget *reportsTab();
+    QWidget *usersTab();
 };

@@ -18,7 +18,8 @@ target_include_directories(warehouse_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/cor
 target_link_libraries(warehouse_core PUBLIC Qt6::Core Qt6::Sql)
 
 set(APP_SOURCES app/LoginDialog.cpp app/LoginDialog.h app/MainWindow.cpp app/MainWindow.h
-    app/ProductDialog.cpp app/ProductDialog.h app/ProductTableModel.cpp app/ProductTableModel.h)
+    app/ProductDialog.cpp app/ProductDialog.h app/ProductTableModel.cpp app/ProductTableModel.h
+    app/SaleDialog.cpp app/SaleDialog.h app/ReceiptDialog.cpp app/ReceiptDialog.h)
 add_executable(warehouse_app app/main.cpp ${APP_SOURCES})
 target_link_libraries(warehouse_app PRIVATE warehouse_core Qt6::Widgets)
 
@@ -36,7 +37,11 @@ add_executable(tst_gui tests/tst_gui.cpp ${APP_SOURCES})
 target_include_directories(tst_gui PRIVATE app)
 target_link_libraries(tst_gui PRIVATE warehouse_core Qt6::Widgets Qt6::Test)
 add_test(NAME tst_gui COMMAND tst_gui)
-set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+if(WIN32)
+    set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=windows")
+else()
+    set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
 
 foreach(target warehouse_core warehouse_app warehouse_tests tst_inventory tst_discounts tst_permissions tst_gui)
     if(MSVC)

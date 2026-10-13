@@ -11,12 +11,12 @@ Product::Product(int id, QString name, QString sku, int quantity, QString suppli
 QString Product::validate() const
 {
     if (m_name.trimmed().isEmpty())
-        return QCoreApplication::translate("Product", "Въведете име на продукта.");
+        return tr("Въведете име на продукта.");
     if (m_sku.trimmed().isEmpty())
-        return QCoreApplication::translate("Product", "Въведете продуктов код.");
+        return tr("Въведете продуктов код.");
     if (m_quantity < 0)
-        return QCoreApplication::translate("Product", "Наличността не може да бъде отрицателна.");
+        return tr("Наличността не може да бъде отрицателна.");
     if (m_deliveryPrice < 0 || m_salePrice < 0)
-        return QCoreApplication::translate("Product", "Цената не може да бъде отрицателна.");
+        return tr("Цената не може да бъде отрицателна.");
     return {};
 }

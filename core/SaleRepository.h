@@ -1,4 +1,5 @@
 #pragma once
+#include <QCoreApplication>
 #include <QSqlDatabase>
 #include <vector>
 #include "Sale.h"
@@ -6,6 +7,7 @@
 /// Concrete SQLite repository.
 class SaleRepository
 {
+    Q_DECLARE_TR_FUNCTIONS(SaleRepository)
 public:
     /// Constructs a repository without a connection.
     SaleRepository() = default;

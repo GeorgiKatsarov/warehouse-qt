@@ -19,6 +19,17 @@
 #include <QMessageBox>
 #include <QStatusBar>
 
+namespace {
+bool confirmDeletion(QWidget *parent, const QString &text)
+{
+    QMessageBox box(QMessageBox::Question,QObject::tr("Изтриване"),text,
+                    QMessageBox::Yes | QMessageBox::No,parent);
+    box.button(QMessageBox::Yes)->setText(QObject::tr("Да"));
+    box.button(QMessageBox::No)->setText(QObject::tr("Не"));
+    return box.exec()==QMessageBox::Yes;
+}
+}
+
 MainWindow::MainWindow(QWidget *parent) : MainWindow(nullptr,parent) {}
 MainWindow::MainWindow(WarehouseService *service, QWidget *parent) : QMainWindow(parent),m_service(service)
 {
@@ -99,8 +110,7 @@ QWidget *MainWindow::productsTab()
     connect(remove,&QPushButton::clicked,page,[this,selected,reload,errorLabel] {
         Product product;
         if (!selected(product)) { errorLabel->setText(tr("Изберете продукт.")); return; }
-        if (QMessageBox::question(this,tr("Изтриване"),tr("Да се изтрие ли %1?").arg(product.name()),
-                                  QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) return;
+        if (!confirmDeletion(this,tr("Да се изтрие ли %1?").arg(product.name()))) return;
         const QString error = m_service->deleteProduct(product.id());
         reload(); errorLabel->setText(error);
     });
@@ -223,8 +233,7 @@ QWidget *MainWindow::usersTab()
     connect(remove,&QPushButton::clicked,page,[this,table,reload,clear,errorLabel] {
         const int row = table->currentRow();
         if (row<0 || !table->item(row,0)) { errorLabel->setText(tr("Изберете потребител.")); return; }
-        if (QMessageBox::question(this,tr("Изтриване"),tr("Да се изтрие ли избраният потребител?"),
-                                  QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) return;
+        if (!confirmDeletion(this,tr("Да се изтрие ли избраният потребител?"))) return;
         const QString error = m_service->deleteUser(table->item(row,0)->data(Qt::UserRole).toInt());
         if (error.isEmpty()) { reload(); clear(); }
         errorLabel->setText(error);

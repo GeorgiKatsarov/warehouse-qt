@@ -1,9 +1,11 @@
 #pragma once
+#include <QCoreApplication>
 #include <QString>
 
 /// Product data; all prices are integer cents.
 class Product
 {
+    Q_DECLARE_TR_FUNCTIONS(Product)
 public:
     /// Constructs an empty product.
     Product() = default;

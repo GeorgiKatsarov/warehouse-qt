@@ -32,7 +32,7 @@ bool ProductRepository::find(int id, Product &product, QString &error) const
     query.addBindValue(id);
     if (!query.exec()) { error = query.lastError().text(); return false; }
     if (!query.next()) {
-        error = QCoreApplication::translate("ProductRepository", "Продуктът не е намерен.");
+        error = tr("Продуктът не е намерен.");
         return false;
     }
     product = readProduct(query);
@@ -55,7 +55,7 @@ QString ProductRepository::save(Product &product)
     if (!query.exec()) return query.lastError().text();
     if (product.id() == 0) product.setId(query.lastInsertId().toInt());
     else if (query.numRowsAffected() != 1)
-        return QCoreApplication::translate("ProductRepository", "Продуктът не е намерен.");
+        return tr("Продуктът не е намерен.");
     return {};
 }
 QString ProductRepository::remove(int id)
@@ -64,6 +64,6 @@ QString ProductRepository::remove(int id)
     query.prepare("DELETE FROM products WHERE id=?"); query.addBindValue(id);
     if (!query.exec()) return query.lastError().text();
     if (query.numRowsAffected() != 1)
-        return QCoreApplication::translate("ProductRepository", "Продуктът не е намерен.");
+        return tr("Продуктът не е намерен.");
     return {};
 }

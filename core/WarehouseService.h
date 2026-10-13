@@ -1,4 +1,5 @@
 #pragma once
+#include <QCoreApplication>
 #include "ProductRepository.h"
 #include "UserRepository.h"
 #include "SaleRepository.h"
@@ -8,6 +9,7 @@
 /// Business operations and permission checks; no Widgets dependencies.
 class WarehouseService
 {
+    Q_DECLARE_TR_FUNCTIONS(WarehouseService)
 public:
     /// Constructs an unconnected service.
     WarehouseService();

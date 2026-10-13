@@ -21,6 +21,8 @@
 #include <QTemporaryDir>
 #include <QFile>
 #include <QDir>
+#include <QMessageBox>
+#include <QDateEdit>
 
 class GuiTest : public QObject
 {
@@ -29,6 +31,99 @@ public:
     GuiTest() = default;
     explicit GuiTest(QObject *parent) : QObject(parent) {}
 private slots:
+    void productCrudThroughWindow()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        MainWindow window(&service,nullptr);
+        QTimer::singleShot(0,[] {
+            auto dialog = dynamic_cast<ProductDialog*>(QApplication::activeModalWidget());
+            if (!dialog) return;
+            dialog->findChild<QLineEdit*>("productName")->setText("UI Product");
+            dialog->findChild<QLineEdit*>("productSku")->setText("UI-SKU");
+            dialog->findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Save)->click();
+        });
+        window.findChild<QPushButton*>("addProduct")->click();
+        auto table = window.findChild<QTableView*>("productsTable");
+        QCOMPARE(table->model()->rowCount(),11);
+        auto model = static_cast<ProductTableModel*>(table->model());
+        auto selectSku = [table,model] {
+            const auto rows = model->products();
+            for (int row=0; row<static_cast<int>(rows.size()); ++row)
+                if (rows.at(row).sku()=="UI-SKU") { table->selectRow(row); return true; }
+            return false;
+        };
+        QVERIFY(selectSku());
+        QTimer::singleShot(0,[] {
+            auto dialog = dynamic_cast<ProductDialog*>(QApplication::activeModalWidget());
+            if (!dialog) return;
+            dialog->findChild<QLineEdit*>("productName")->setText("Edited UI Product");
+            dialog->findChild<QDialogButtonBox*>()->button(QDialogButtonBox::Save)->click();
+        });
+        window.findChild<QPushButton*>("editProduct")->click();
+        QVERIFY(selectSku());
+        QCOMPARE(model->data(model->index(table->currentIndex().row(),0)).toString(),QString("Edited UI Product"));
+        QTimer::singleShot(0,[] {
+            if (auto box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                box->button(QMessageBox::Yes)->click();
+        });
+        window.findChild<QPushButton*>("deleteProduct")->click();
+        QCOMPARE(model->rowCount(),10);
+    }
+    void userEditingAndDeletionThroughWindow()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        Cashier user(0,"editable",hashPassword("old"),"Editable");
+        QVERIFY(service.saveUser(user).isEmpty());
+        MainWindow window(&service,nullptr); window.show();
+        window.findChild<QTabWidget*>("mainTabs")->setCurrentIndex(3);
+        auto table = window.findChild<QTableWidget*>("usersTable");
+        auto selectUsername = [table](const QString &username) {
+            for (int row=0; row<table->rowCount(); ++row) {
+                if (table->item(row,0)->text()!=username) continue;
+                table->setCurrentCell(row,0);
+                QMetaObject::invokeMethod(table,"cellClicked",Q_ARG(int,row),Q_ARG(int,0));
+                return true;
+            }
+            return false;
+        };
+        QVERIFY(selectUsername("editable"));
+        window.findChild<QLineEdit*>("userFullName")->setText("Updated");
+        window.findChild<QComboBox*>("userRole")->setCurrentIndex(1);
+        window.findChild<QPushButton*>("saveUser")->click();
+        WarehouseService other(database.connection());
+        QVERIFY(other.login("editable","old").isEmpty());
+        QCOMPARE(other.currentUser()->fullName(),QString("Updated"));
+        QCOMPARE(other.currentUser()->roleName(),QString("manager"));
+        QVERIFY(selectUsername("editable"));
+        QTimer::singleShot(0,[] {
+            if (auto box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget()))
+                box->button(QMessageBox::Yes)->click();
+        });
+        window.findChild<QPushButton*>("deleteUser")->click();
+        QCOMPARE(table->rowCount(),3);
+        QVERIFY(!other.login("editable","old").isEmpty());
+    }
+    void seasonalCheckoutValidation()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("cashier","cashier").isEmpty());
+        SaleDialog dialog(&service,nullptr);
+        dialog.findChild<QComboBox*>("saleProduct")->setCurrentIndex(
+            dialog.findChild<QComboBox*>("saleProduct")->findData(1));
+        dialog.findChild<QPushButton*>("addToCart")->click();
+        dialog.findChild<QComboBox*>("discount")->setCurrentIndex(3);
+        dialog.findChild<QSpinBox*>("seasonPercent")->setValue(20);
+        QCOMPARE(dialog.sale().total(),qint64(80));
+        dialog.findChild<QDateEdit*>("seasonTo")->setDate(QDate::currentDate().addDays(-1));
+        QVERIFY(!dialog.findChild<QPushButton*>("completeSale")->isEnabled());
+        dialog.findChild<QDateEdit*>("seasonTo")->setDate(QDate::currentDate());
+        QVERIFY(dialog.findChild<QPushButton*>("completeSale")->isEnabled());
+        dialog.findChild<QSpinBox*>("saleQuantity")->setValue(1000);
+        dialog.findChild<QPushButton*>("addToCart")->click();
+        QVERIFY(!dialog.findChild<QPushButton*>("completeSale")->isEnabled());
+    }
     void checkoutReportsUsersAndPdf()
     {
         Database database(":memory:"); QVERIFY(database.open().isEmpty());

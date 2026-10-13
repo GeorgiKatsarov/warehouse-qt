@@ -15,7 +15,7 @@
 | SQLite products, users, sales, reports | Database::open schema and seed; ProductRepository, UserRepository, SaleRepository |
 | Required Qt Test coverage | tst_inventory, tst_discounts, tst_permissions; extra widget/PDF checks in tst_gui |
 | UML roles, interfaces, Strategy Pattern | ../uml/class-diagram.puml and rendered ../uml/class-diagram.png |
-| English and Bulgarian documentation | Matching README, ARCHITECTURE, USER_GUIDE, DEFENSE_NOTES and COMPLIANCE under docs/en and docs/bg (Phase 6) |
+| English and Bulgarian documentation | Matching README, ARCHITECTURE, USER_GUIDE, DEFENSE_NOTES and COMPLIANCE under docs/en and docs/bg |
 
 ## Reviewed behavior
 

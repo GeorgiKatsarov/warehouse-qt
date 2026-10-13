@@ -15,7 +15,7 @@
 | SQLite за продукти, потребители, продажби и отчети | Схема и начални данни в Database::open; ProductRepository, UserRepository, SaleRepository |
 | Задължителни модулни тестове с Qt Test | tst_inventory, tst_discounts, tst_permissions; допълнителни проверки на интерфейса/PDF в tst_gui |
 | UML за роли, интерфейси и Strategy Pattern | ../uml/class-diagram.puml и генерираното ../uml/class-diagram.png |
-| Документация на английски и български | Еднакъв комплект README, ARCHITECTURE, USER_GUIDE, DEFENSE_NOTES и COMPLIANCE в docs/en и docs/bg (фаза 6) |
+| Документация на английски и български | Еднакъв комплект README, ARCHITECTURE, USER_GUIDE, DEFENSE_NOTES и COMPLIANCE в docs/en и docs/bg |
 
 ## Проверено поведение
 

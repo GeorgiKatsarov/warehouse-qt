@@ -1,17 +1,22 @@
 #pragma once
+#include <QCoreApplication>
 #include <QSqlDatabase>
 #include <QString>
 
 /// Owns one named SQLite connection; outlives repositories and services.
 class Database
 {
+    Q_DECLARE_TR_FUNCTIONS(Database)
 public:
     /// Uses the default file path.
     Database();
     /// Uses a file path or :memory: for tests.
     explicit Database(QString filePath);
+    /// Closes and unregisters the owned connection.
     ~Database();
+    /// Forbids copying the connection owner.
     Database(const Database &) = delete;
+    /// Forbids assigning another connection owner.
     Database &operator=(const Database &) = delete;
     /// Opens the connection, creates the schema, and seeds empty tables.
     QString open();

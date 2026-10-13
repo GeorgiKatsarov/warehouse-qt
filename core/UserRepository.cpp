@@ -35,7 +35,7 @@ std::shared_ptr<User> UserRepository::login(QString username, QString password, 
     query.addBindValue(username.trimmed()); query.addBindValue(hashPassword(password));
     if (!query.exec()) { error = query.lastError().text(); return {}; }
     if (!query.next()) {
-        error = QCoreApplication::translate("UserRepository", "Невалидно потребителско име или парола.");
+        error = tr("Невалидно потребителско име или парола.");
         return {};
     }
     return readUser(query);
@@ -43,7 +43,7 @@ std::shared_ptr<User> UserRepository::login(QString username, QString password, 
 QString UserRepository::save(User &user)
 {
     if (user.username().trimmed().isEmpty() || user.fullName().trimmed().isEmpty() || user.passwordHash().isEmpty())
-        return QCoreApplication::translate("UserRepository", "Попълнете име, потребителско име и парола.");
+        return tr("Попълнете име, потребителско име и парола.");
     QSqlQuery query(m_database);
     query.prepare(user.id() == 0
         ? "INSERT INTO users(username,password_hash,full_name,role) VALUES(?,?,?,?)"
@@ -54,7 +54,7 @@ QString UserRepository::save(User &user)
     if (!query.exec()) return query.lastError().text();
     if (user.id() == 0) user.setId(query.lastInsertId().toInt());
     else if (query.numRowsAffected() != 1)
-        return QCoreApplication::translate("UserRepository", "Потребителят не е намерен.");
+        return tr("Потребителят не е намерен.");
     return {};
 }
 QString UserRepository::remove(int id)
@@ -63,6 +63,6 @@ QString UserRepository::remove(int id)
     query.prepare("DELETE FROM users WHERE id=?"); query.addBindValue(id);
     if (!query.exec()) return query.lastError().text();
     if (query.numRowsAffected() != 1)
-        return QCoreApplication::translate("UserRepository", "Потребителят не е намерен.");
+        return tr("Потребителят не е намерен.");
     return {};
 }

@@ -28,7 +28,7 @@ bool SaleRepository::find(int id, Sale &sale, QString &error) const
     query.prepare("SELECT id,created_at,user_id,customer_name,is_vip,discount_name,total FROM sales WHERE id=?");
     query.addBindValue(id);
     if (!query.exec()) { error = query.lastError().text(); return false; }
-    if (!query.next()) { error = QCoreApplication::translate("SaleRepository", "Продажбата не е намерена."); return false; }
+    if (!query.next()) { error = tr("Продажбата не е намерена."); return false; }
     sale = Sale(query.value(3).toString(),query.value(4).toBool());
     sale.setId(query.value(0).toInt()); sale.setCreatedAt(QDateTime::fromString(query.value(1).toString(),Qt::ISODate));
     sale.setUserId(query.value(2).toInt()); sale.setDiscountName(query.value(5).toString());

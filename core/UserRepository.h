@@ -1,4 +1,5 @@
 #pragma once
+#include <QCoreApplication>
 #include <QSqlDatabase>
 #include <vector>
 #include "User.h"
@@ -7,6 +8,7 @@
 /// Concrete SQLite repository.
 class UserRepository
 {
+    Q_DECLARE_TR_FUNCTIONS(UserRepository)
 public:
     /// Constructs a repository without a connection.
     UserRepository() = default;

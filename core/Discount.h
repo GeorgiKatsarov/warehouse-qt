@@ -1,15 +1,18 @@
 #pragma once
+#include <QCoreApplication>
 #include <QDate>
 #include <QString>
 
 /// Strategy Pattern interface; apply returns a discounted line total.
 class DiscountStrategy
 {
+    Q_DECLARE_TR_FUNCTIONS(DiscountStrategy)
 public:
     /// Constructs a strategy with no label.
     DiscountStrategy() = default;
     /// Constructs a strategy with its receipt label.
     explicit DiscountStrategy(QString label) : m_label(label) {}
+    /// Destroys a derived strategy through its base pointer.
     virtual ~DiscountStrategy() = default;
     /// Calculates a line total in cents.
     virtual qint64 apply(qint64 unitPrice, int quantity, bool isVip, QDate date) const = 0;

@@ -8,7 +8,7 @@ QString formatCents(qint64 value)
     const quint64 absolute = negative ? quint64(-(value + 1)) + 1 : quint64(value);
     return QString("%1%2.%3 %4").arg(negative ? "-" : "").arg(absolute / 100)
         .arg(absolute % 100, 2, 10, QChar('0'))
-        .arg(QCoreApplication::translate("Money", "€"));
+        .arg(QObject::tr("€"));
 }
 ProductTableModel::ProductTableModel(QObject *parent) : QAbstractTableModel(parent) {}
 ProductTableModel::ProductTableModel(std::vector<Product> products, QObject *parent)

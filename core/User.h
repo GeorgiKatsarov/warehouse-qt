@@ -11,6 +11,7 @@ public:
     User() = default;
     /// Constructs a stored user.
     User(int id, QString username, QString passwordHash, QString fullName);
+    /// Destroys a derived role through its base pointer.
     virtual ~User() = default;
     /// Returns the stable database role identifier.
     virtual QString roleName() const = 0;

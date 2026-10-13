@@ -71,9 +71,9 @@ QString Database::open()
     if (seedUsers) {
         const QStringList roles = {"admin", "manager", "cashier"};
         const QStringList names = {
-            QCoreApplication::translate("Database", "Администратор"),
-            QCoreApplication::translate("Database", "Управител на склада"),
-            QCoreApplication::translate("Database", "Касиер")
+            tr("Администратор"),
+            tr("Управител на склада"),
+            tr("Касиер")
         };
         for (int i = 0; i < roles.size(); ++i) {
             query.prepare("INSERT INTO users(username,password_hash,full_name,role) VALUES(?,?,?,?)");
@@ -84,22 +84,22 @@ QString Database::open()
     }
     if (seedProducts) {
         const QStringList names = {
-            QCoreApplication::translate("Database", "Молив"),
-            QCoreApplication::translate("Database", "Химикал"),
-            QCoreApplication::translate("Database", "Тетрадка"),
-            QCoreApplication::translate("Database", "Папка"),
-            QCoreApplication::translate("Database", "Гума"),
-            QCoreApplication::translate("Database", "Линия"),
-            QCoreApplication::translate("Database", "Маркер"),
-            QCoreApplication::translate("Database", "Лепило"),
-            QCoreApplication::translate("Database", "Ножица"),
-            QCoreApplication::translate("Database", "Копирна хартия")
+            tr("Молив"),
+            tr("Химикал"),
+            tr("Тетрадка"),
+            tr("Папка"),
+            tr("Гума"),
+            tr("Линия"),
+            tr("Маркер"),
+            tr("Лепило"),
+            tr("Ножица"),
+            tr("Копирна хартия")
         };
         for (int i = 0; i < names.size(); ++i) {
             query.prepare("INSERT INTO products(name,sku,quantity,supplier,delivery_price,sale_price) VALUES(?,?,?,?,?,?)");
             query.addBindValue(names.at(i)); query.addBindValue(QString("P%1").arg(i+1,3,10,QChar('0')));
             query.addBindValue(100);
-            query.addBindValue(QCoreApplication::translate("Database", "Демо доставчик"));
+            query.addBindValue(tr("Демо доставчик"));
             query.addBindValue(50 + i*30); query.addBindValue(100 + i*50);
             if (!query.exec()) { const QString error = query.lastError().text(); db.rollback(); return error; }
         }

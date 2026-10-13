@@ -21,11 +21,11 @@ qint64 discounted(qint64 total, int percent)
 }
 
 NoDiscount::NoDiscount()
-    : DiscountStrategy(QCoreApplication::translate("Discount", "Без отстъпка")) {}
+    : DiscountStrategy(tr("Без отстъпка")) {}
 QuantityDiscount::QuantityDiscount()
-    : DiscountStrategy(QCoreApplication::translate("Discount", "Отстъпка за количество")) {}
+    : DiscountStrategy(tr("Отстъпка за количество")) {}
 VipDiscount::VipDiscount()
-    : DiscountStrategy(QCoreApplication::translate("Discount", "VIP отстъпка")) {}
+    : DiscountStrategy(tr("VIP отстъпка")) {}
 
 qint64 NoDiscount::apply(qint64 unitPrice, int quantity, bool, QDate) const
 {
@@ -40,7 +40,7 @@ qint64 VipDiscount::apply(qint64 unitPrice, int quantity, bool isVip, QDate) con
     return discounted(lineTotal(unitPrice, quantity), isVip ? 10 : 0);
 }
 SeasonalDiscount::SeasonalDiscount()
-    : DiscountStrategy(QCoreApplication::translate("Discount", "Сезонна отстъпка")) {}
+    : DiscountStrategy(tr("Сезонна отстъпка")) {}
 SeasonalDiscount::SeasonalDiscount(int percent, QDate from, QDate to)
     : SeasonalDiscount()
 {

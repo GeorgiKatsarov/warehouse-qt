@@ -17,7 +17,9 @@ add_library(warehouse_core STATIC core/Environment.h core/Environment.cpp
 target_include_directories(warehouse_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/core)
 target_link_libraries(warehouse_core PUBLIC Qt6::Core Qt6::Sql)
 
-add_executable(warehouse_app app/main.cpp)
+set(APP_SOURCES app/LoginDialog.cpp app/LoginDialog.h app/MainWindow.cpp app/MainWindow.h
+    app/ProductDialog.cpp app/ProductDialog.h app/ProductTableModel.cpp app/ProductTableModel.h)
+add_executable(warehouse_app app/main.cpp ${APP_SOURCES})
 target_link_libraries(warehouse_app PRIVATE warehouse_core Qt6::Widgets)
 
 add_executable(warehouse_tests tests/tst_environment.cpp)
@@ -30,7 +32,13 @@ foreach(suite inventory discounts permissions)
     add_test(NAME tst_${suite} COMMAND tst_${suite})
 endforeach()
 
-foreach(target warehouse_core warehouse_app warehouse_tests tst_inventory tst_discounts tst_permissions)
+add_executable(tst_gui tests/tst_gui.cpp ${APP_SOURCES})
+target_include_directories(tst_gui PRIVATE app)
+target_link_libraries(tst_gui PRIVATE warehouse_core Qt6::Widgets Qt6::Test)
+add_test(NAME tst_gui COMMAND tst_gui)
+set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+foreach(target warehouse_core warehouse_app warehouse_tests tst_inventory tst_discounts tst_permissions tst_gui)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()

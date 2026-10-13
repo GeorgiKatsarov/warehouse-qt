@@ -34,7 +34,7 @@ The invoice is a simple assignment document using the same sale number, customer
 
 - Removed the redundant Environment function/files; the initial test checks QSqlDatabase directly.
 - Removed Sale.cpp, which only included its data-only header.
-- Removed unnecessary schema migration code; the approved schema is created directly.
+- The initial version created its schema directly; the authorized extension adds only the migrations required to preserve existing records.
 - Repositories are concrete and short-lived; there are no abstract repository interfaces.
 - Widget pointers remain local and owned by Qt; the service is a non-owning pointer.
 - Required accessor and constructor repetition stays because the assignment explicitly requires it.
@@ -43,8 +43,14 @@ The invoice is a simple assignment document using the same sale number, customer
 ## Verification and limits
 
 On Windows 11, Qt 6.12.0, GCC 13.1.0 and CMake 3.30.5: all targets build with
--Wall -Wextra and zero compiler warnings; five CTest executables pass.
+-Wall -Wextra and zero compiler warnings; six CTest executables pass.
 GUI screenshots were inspected for sales, reports and users. PDF export is tested by its header and file size, parsed and visually inspected.
 
 The brief requested Qt 6.8; the installed 6.12 kit was used. Qt 6.8 and other OS builds are untested.
 The original Bulgarian assignment mentioned in the brief was not provided, so this audit covers the supplied brief.
+
+## Authorized extension
+
+The user requested a professional UI, history, CRUD and at least five report types with PDF/XLS.
+The original restriction against additional features is superseded for this scope.
+Additive migrations now preserve existing records. Updated workflows and verification are in [OPERATIONS](OPERATIONS.md).

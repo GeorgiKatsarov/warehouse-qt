@@ -3,6 +3,7 @@
 #include <QSqlDatabase>
 #include <vector>
 #include "Product.h"
+#include "ProductHistory.h"
 
 /// Concrete SQLite repository.
 class ProductRepository
@@ -25,6 +26,11 @@ public:
     QString save(Product &product);
     /// Deletes an unsold product; foreign keys preserve sales.
     QString remove(int id);
+    /// Loads newest-first audit entries for a product.
+    std::vector<ProductHistoryEntry> history(int productId, QString &error) const;
+    /// Writes an audit entry inside the caller's transaction.
+    QString recordHistory(const Product &before, const Product &after, QString action,
+                          QString actorName, int saleId = 0, QString notes = QStringLiteral(""));
 private:
     QSqlDatabase m_database;
 };

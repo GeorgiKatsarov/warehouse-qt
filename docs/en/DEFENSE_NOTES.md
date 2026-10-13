@@ -82,3 +82,10 @@ Every hard requirement is mapped in [Compliance audit](COMPLIANCE.md).
 Two approved corrections: use EUR, and snapshot cost/name/SKU for sold items.
 The installed Qt 6.12 kit was tested; Qt 6.8 was not.
 The original Bulgarian assignment text was absent, so evidence is against the supplied brief.
+
+## Extended workflows
+
+Sale cancellation retains an audit trail and restores stock transactionally.
+Reports are JSON snapshots, so reopening does not recompute their results.
+History is not editable; XLS contains actual numeric cells and never interprets entered text as formulas.
+tst_workflows proves these rules; [OPERATIONS](OPERATIONS.md) describes their use.

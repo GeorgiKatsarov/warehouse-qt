@@ -24,7 +24,7 @@ public:
     /// Clears the session.
     void logout() { m_currentUser.reset(); }
     /// Returns the authenticated user.
-    std::shared_ptr<User> currentUser() const { return m_currentUser; }
+    std::shared_ptr<const User> currentUser() const { return m_currentUser; }
     /// Reauthenticates the session using credentials (no role injection).
     QString setCurrentUser(QString username, QString password) { return login(username, password); }
     /// Checks the current user's permission.
@@ -39,20 +39,40 @@ public:
     QString saveProduct(Product &product);
     /// Deletes a product with ManageProducts permission.
     QString deleteProduct(int id);
+    /// Lists read-only audit history for an authenticated user.
+    std::vector<ProductHistoryEntry> productHistory(int productId, QString &error) const;
+    /// Returns product count, low-stock count, units, today's sale count and revenue cents.
+    QStringList overview(QString &error) const;
     /// Calculates current prices and stock availability without changing stock.
     QString previewSale(Sale &sale) const;
     /// Validates, decreases stock, and persists a sale atomically.
     QString registerSale(Sale &sale);
+    /// Lists sales visible to the current role.
+    std::vector<Sale> sales(QString &error) const;
+    /// Loads a sale for an authorized cashier or administrator.
+    bool findSale(int id, Sale &sale, QString &error) const;
+    /// Corrects an active sale and stock atomically using current prices.
+    QString updateSale(Sale &sale);
+    /// Cancels an active sale, restores stock, and keeps its audit record.
+    QString cancelSale(int id);
     /// Loads an authorized sale as escaped HTML.
     QString receipt(int saleId, bool invoice, QString &error) const;
     /// Computes and saves a report with ViewReports permission.
     QString generateReport(Report &report);
     /// Lists saved reports with ViewReports permission.
     std::vector<Report> reports(QString &error) const;
+    /// Reopens a saved report.
+    bool findReport(int id, Report &report, QString &error) const;
+    /// Renames a saved report without changing its snapshot.
+    QString renameReport(int id, QString title);
+    /// Deletes a saved report.
+    QString deleteReport(int id);
     /// Lists users with ManageUsers permission.
     std::vector<std::shared_ptr<User>> users(QString &error) const;
     /// Saves a user with ManageUsers permission.
     QString saveUser(User &user);
+    /// Validates a new plaintext password or preserves it on an existing user.
+    QString saveUser(User &user, const QString &password);
     /// Deletes a user with ManageUsers permission.
     QString deleteUser(int id);
 private:
@@ -61,4 +81,6 @@ private:
     std::unique_ptr<DiscountStrategy> m_discount;
     QString permissionError(Permission permission) const;
     QString calculate(Sale &sale) const;
+    QString changeStock(int productId, int delta, QString action, int saleId);
+    QString saleAccess(const Sale &sale) const;
 };

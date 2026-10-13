@@ -22,6 +22,8 @@ public:
     std::vector<std::shared_ptr<User>> all(QString &error) const;
     /// Authenticates a username and password.
     std::shared_ptr<User> login(QString username, QString password, QString &error) const;
+    /// Finds a current stored role by ID.
+    std::shared_ptr<User> find(int id, QString &error) const;
     /// Inserts or updates a user.
     QString save(User &user);
     /// Deletes a user, preserving referenced sales.

@@ -88,7 +88,7 @@ ReceiptDialog renders it in QTextBrowser and saves a PDF through QPdfWriter.
 All logged-in users may read the product catalog. Protected operations check permission in the service.
 GUI buttons/tabs reflect permissions; disabling a button is not the authorization mechanism.
 An admin cannot delete or demote their own active account.
-LoginDialog opens MainWindow. Its tabs are Products, Sales and Reports; admins also get Users.
+LoginDialog opens MainWindow. Sidebar pages are Overview, Products, New sale, Sales history and Reports; admins also get Users.
 ProductTableModel feeds QTableView. SaleDialog is embedded in the Sales tab.
 Switching to Products or Sales reloads stock. See [User guide](USER_GUIDE.md).
 
@@ -112,3 +112,11 @@ java -jar build-verified/plantuml.jar -tpng docs/uml/class-diagram.puml
 ```
 
 [Compliance audit](COMPLIANCE.md) maps every hard requirement to its source files.
+
+## Extended architecture
+
+product_history stores immutable events. sales.status distinguishes active and cancelled sales.
+reports adds type, title and payload containing the exact saved rows. ProductDetailDialog shows history,
+ReportDialog reopens reports, and ReportExport writes genuine BIFF8/OLE XLS.
+Business CRUD remains in WarehouseService; tst_workflows verifies migrations and atomic failures.
+See [Extended workflows](OPERATIONS.md).

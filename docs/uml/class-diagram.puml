@@ -65,6 +65,8 @@ package "core (Qt Core + Sql)" {
     + connection() : QSqlDatabase
   }
   class ProductRepository
+  class ProductHistoryEntry
+  ProductRepository ..> ProductHistoryEntry : immutable audit
   class UserRepository
   class SaleRepository
   class WarehouseService {
@@ -96,6 +98,12 @@ package "app (Qt Widgets)" {
   class ProductTableModel
   class SaleDialog
   class ReceiptDialog
+  class ProductDetailDialog
+  class ReportDialog
+  ProductDetailDialog ..> WarehouseService
+  ReportDialog ..> Report : saved snapshot / PDF / XLS
+  MainWindow ..> ProductDetailDialog
+  MainWindow ..> ReportDialog
   MainWindow *-- ProductTableModel : Qt parent ownership
   MainWindow *-- SaleDialog : Qt parent ownership
   MainWindow ..> ProductDialog

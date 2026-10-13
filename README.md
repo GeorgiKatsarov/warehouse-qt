@@ -13,4 +13,10 @@ Bulgarian Widgets interface, SQLite, three user roles, discount strategies and E
 
 Default logins / Начални профили: admin/admin, manager/manager, cashier/cashier.
 Open CMakeLists.txt in Qt Creator with the installed MinGW 64-bit kit.
-Verified / Проверено: Windows 11, Qt 6.12.0; all five CTest executables pass.
+Verified / Проверено: Windows 11, Qt 6.12.0; all six CTest executables pass.
+
+New: dashboard, searchable inventory, product audit history, sale corrections/cancellations,
+and five saved report types with PDF and genuine XLS export.
+Ново: преглед, търсене, продуктова история, корекции/отмяна на продажби и пет вида запазени отчети с PDF/XLS.
+
+[Extended workflows](docs/en/OPERATIONS.md) · [Разширени функции](docs/bg/OPERATIONS.md)

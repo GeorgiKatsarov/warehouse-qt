@@ -23,6 +23,8 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     /// Returns Bulgarian column headers.
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    /// Sorts the displayed product rows.
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
 private:
     std::vector<Product> m_products;
 };

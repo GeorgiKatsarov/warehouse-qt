@@ -10,6 +10,8 @@ Product::Product(int id, QString name, QString sku, int quantity, QString suppli
 
 QString Product::validate() const
 {
+    if (m_id<0 || m_name.size()>160 || m_sku.size()>64 || m_supplier.size()>160)
+        return tr("Невалидни данни: име и доставчик до 160 знака, код до 64 знака.");
     if (m_name.trimmed().isEmpty())
         return tr("Въведете име на продукта.");
     if (m_sku.trimmed().isEmpty())

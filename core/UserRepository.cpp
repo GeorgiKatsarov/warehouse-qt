@@ -3,6 +3,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QCoreApplication>
+#include <QRegularExpression>
 
 namespace {
 std::shared_ptr<User> readUser(const QSqlQuery &query)
@@ -42,8 +43,10 @@ std::shared_ptr<User> UserRepository::login(QString username, QString password, 
 }
 QString UserRepository::save(User &user)
 {
-    if (user.username().trimmed().isEmpty() || user.fullName().trimmed().isEmpty() || user.passwordHash().isEmpty())
-        return tr("Попълнете име, потребителско име и парола.");
+    if (user.id()<0 || !QRegularExpression("^[A-Za-z0-9_.-]{3,64}$").match(user.username().trimmed()).hasMatch()
+        || user.fullName().trimmed().isEmpty() || user.fullName().size()>160
+        || !QRegularExpression("^[0-9a-f]{64}$").match(user.passwordHash()).hasMatch())
+        return tr("Името е задължително (до 160 знака). Потребителското име трябва да е 3–64 латински букви, цифри, точка, тире или долна черта. Необходима е валидна парола.");
     QSqlQuery query(m_database);
     query.prepare(user.id() == 0
         ? "INSERT INTO users(username,password_hash,full_name,role) VALUES(?,?,?,?)"
@@ -65,4 +68,12 @@ QString UserRepository::remove(int id)
     if (query.numRowsAffected() != 1)
         return tr("Потребителят не е намерен.");
     return {};
+}
+std::shared_ptr<User> UserRepository::find(int id, QString &error) const
+{
+    error.clear(); QSqlQuery query(m_database);
+    query.prepare("SELECT id,username,password_hash,full_name,role FROM users WHERE id=?"); query.addBindValue(id);
+    if (!query.exec()) { error = query.lastError().text(); return {}; }
+    if (!query.next()) { error = tr("Потребителят не е намерен."); return {}; }
+    return readUser(query);
 }

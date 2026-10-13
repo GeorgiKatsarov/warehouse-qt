@@ -3,6 +3,8 @@
 #include <QTextDocument>
 #include <QPdfWriter>
 #include <QFile>
+#include <QSaveFile>
+#include <QPageLayout>
 #include <QFileDialog>
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
@@ -33,16 +35,19 @@ void ReceiptDialog::setHtml(QString value)
 {
     m_html = value; findChild<QTextBrowser*>("receiptBrowser")->setHtml(value);
 }
-QString ReceiptDialog::savePdf(const QString &path) const
+QString ReceiptDialog::savePdf(const QString &path, bool landscape) const
 {
-    QFile file(path);
+    QSaveFile file(path);
     if (!file.open(QIODevice::WriteOnly)) return tr("Документът не може да бъде записан: %1").arg(file.errorString());
-    file.close();
     {
-        QPdfWriter writer(path); writer.setResolution(96); writer.setPageSize(QPageSize(QPageSize::A4));
+        QPdfWriter writer(&file); writer.setResolution(96); writer.setPageSize(QPageSize(QPageSize::A4));
+        writer.setPageOrientation(landscape ? QPageLayout::Landscape : QPageLayout::Portrait);
         QTextDocument document; document.setHtml(m_html); document.print(&writer);
     }
-    if (!file.open(QIODevice::ReadOnly) || file.read(5) != "%PDF-")
+    if (file.error()!=QFileDevice::NoError || !file.commit())
+        return tr("Неуспешно създаване на PDF: %1").arg(file.errorString());
+    QFile saved(path);
+    if (!saved.open(QIODevice::ReadOnly) || saved.read(5) != "%PDF-")
         return tr("Неуспешно създаване на PDF.");
     return {};
 }

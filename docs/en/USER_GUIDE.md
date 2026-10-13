@@ -3,8 +3,8 @@
 ## Login and common navigation
 
 1. Start warehouse_app and enter a default login from [README](README.md).
-2. Use the Products, Sales and Reports tabs. Unavailable operations are disabled.
-3. Administrators additionally see Users. Close and restart the app to change login.
+2. Use the sidebar pages. Unavailable operations are disabled.
+3. Administrators additionally see Users. Use Switch user to change login.
 
 All money is in EUR. Enter prices such as 12.34 or 12,34; at most two decimal places are accepted.
 The app keeps its database between sessions.
@@ -64,3 +64,7 @@ Log in as cashier and show disabled product editing/report access.
 Complete a sale of 10 P001 pencils with VIP policy: €9.00 revenue, €4.00 profit and 10 units sold.
 Log in as manager to generate the corresponding report and show that sales are disabled.
 Log in as admin to demonstrate Users. These demo results assume the original seeded prices.
+
+## Updated version
+
+For product history, sale edits/cancellation, five report types, reopening and PDF/XLS, see [Extended workflows](OPERATIONS.md).

@@ -20,4 +20,6 @@ private:
     QWidget *productsTab();
     QWidget *reportsTab();
     QWidget *usersTab();
+    QWidget *dashboardTab();
+    QWidget *salesHistoryTab();
 };

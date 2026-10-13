@@ -21,10 +21,18 @@ public:
     QString save(Sale &sale);
     /// Loads a sale and its receipt lines.
     bool find(int id, Sale &sale, QString &error) const;
+    /// Lists sale headers; nonzero userId limits results to that cashier.
+    std::vector<Sale> all(QString &error, int userId = 0) const;
     /// Computes and saves a financial report.
     QString generate(Report &report);
     /// Lists previously generated reports.
     std::vector<Report> reports(QString &error) const;
+    /// Reopens a stored snapshot without recomputation.
+    bool findReport(int id, Report &report, QString &error) const;
+    /// Changes only the report title.
+    QString renameReport(int id, QString title);
+    /// Deletes one report snapshot.
+    QString removeReport(int id);
 private:
     QSqlDatabase m_database;
 };

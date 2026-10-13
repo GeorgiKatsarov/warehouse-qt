@@ -4,6 +4,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QUuid>
+#include <QDateTime>
 
 Database::Database() : Database(QStringLiteral("warehouse.sqlite")) {}
 Database::Database(QString filePath)
@@ -68,6 +69,29 @@ QString Database::open()
             return error;
         }
     }
+    const QStringList upgrades = {
+        "sales|status|TEXT NOT NULL DEFAULT 'active'",
+        "reports|type|INTEGER NOT NULL DEFAULT 0",
+        "reports|title|TEXT NOT NULL DEFAULT ''",
+        "reports|payload|TEXT NOT NULL DEFAULT ''"
+    };
+    for (const QString &upgrade : upgrades) {
+        const QStringList parts = upgrade.split('|');
+        if (!query.exec("PRAGMA table_info(" + parts.at(0) + ")")) {
+            const QString error = query.lastError().text(); db.rollback(); return error;
+        }
+        bool found = false;
+        while (query.next()) if (query.value(1).toString()==parts.at(1)) found = true;
+        if (!found && !query.exec("ALTER TABLE " + parts.at(0) + " ADD COLUMN " + parts.at(1) + " " + parts.at(2))) {
+            const QString error = query.lastError().text(); db.rollback(); return error;
+        }
+    }
+    if (!query.exec("CREATE TABLE IF NOT EXISTS product_history(id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL, created_at TEXT NOT NULL, actor_name TEXT NOT NULL, action TEXT NOT NULL, quantity_before INTEGER NOT NULL, quantity_after INTEGER NOT NULL, name_before TEXT NOT NULL, name_after TEXT NOT NULL, delivery_before INTEGER NOT NULL, delivery_after INTEGER NOT NULL, price_before INTEGER NOT NULL, price_after INTEGER NOT NULL, sale_id INTEGER NOT NULL DEFAULT 0, notes TEXT NOT NULL)")) {
+        const QString error = query.lastError().text(); db.rollback(); return error;
+    }
+    if (!query.exec("CREATE INDEX IF NOT EXISTS product_history_product ON product_history(product_id,id)")) {
+        const QString error = query.lastError().text(); db.rollback(); return error;
+    }
     if (seedUsers) {
         const QStringList roles = {"admin", "manager", "cashier"};
         const QStringList names = {
@@ -104,6 +128,15 @@ QString Database::open()
             if (!query.exec()) { const QString error = query.lastError().text(); db.rollback(); return error; }
         }
     }
+    query.prepare("INSERT INTO product_history(product_id,created_at,actor_name,action,quantity_before,quantity_after,name_before,name_after,delivery_before,delivery_after,price_before,price_after,sale_id,notes) SELECT p.id,?,?,?,0,p.quantity,'',p.name,0,p.delivery_price,0,p.sale_price,0,? FROM products p WHERE NOT EXISTS(SELECT 1 FROM product_history h WHERE h.product_id=p.id)");
+    query.addBindValue(QDateTime::currentDateTime().toString(Qt::ISODate));
+    query.addBindValue(tr("Система")); query.addBindValue(tr("Начална наличност"));
+    query.addBindValue(tr("Начално състояние при създаване на историята."));
+    if (!query.exec()) { const QString error = query.lastError().text(); db.rollback(); return error; }
+    query.prepare("INSERT INTO product_history(product_id,created_at,actor_name,action,quantity_before,quantity_after,name_before,name_after,delivery_before,delivery_after,price_before,price_after,sale_id,notes) SELECT i.product_id,s.created_at,u.full_name,?,-1,-1,i.product_name,i.product_name,i.delivery_price,i.delivery_price,i.unit_price,i.unit_price,s.id,?||CAST(i.quantity AS TEXT)||? FROM sale_items i JOIN sales s ON s.id=i.sale_id JOIN users u ON u.id=s.user_id WHERE NOT EXISTS(SELECT 1 FROM product_history h WHERE h.product_id=i.product_id AND h.sale_id=s.id)");
+    query.addBindValue(tr("Архивна продажба")); query.addBindValue(tr("Продадени "));
+    query.addBindValue(tr(" бр. Наличностите преди и след продажбата не са записани."));
+    if (!query.exec()) { const QString error = query.lastError().text(); db.rollback(); return error; }
     if (!db.commit()) { const QString error = db.lastError().text(); db.rollback(); return error; }
     return {};
 }

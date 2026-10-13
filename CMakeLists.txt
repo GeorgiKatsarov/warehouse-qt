@@ -19,7 +19,9 @@ target_link_libraries(warehouse_core PUBLIC Qt6::Core Qt6::Sql)
 
 set(APP_SOURCES app/LoginDialog.cpp app/LoginDialog.h app/MainWindow.cpp app/MainWindow.h
     app/ProductDialog.cpp app/ProductDialog.h app/ProductTableModel.cpp app/ProductTableModel.h
-    app/SaleDialog.cpp app/SaleDialog.h app/ReceiptDialog.cpp app/ReceiptDialog.h)
+    app/SaleDialog.cpp app/SaleDialog.h app/ReceiptDialog.cpp app/ReceiptDialog.h
+    app/ReportDialog.cpp app/ReportDialog.h app/ReportExport.cpp app/ReportExport.h
+    app/ProductDetailDialog.cpp app/ProductDetailDialog.h app/UiHelpers.cpp app/UiHelpers.h)
 add_executable(warehouse_app app/main.cpp ${APP_SOURCES})
 target_link_libraries(warehouse_app PRIVATE warehouse_core Qt6::Widgets)
 
@@ -27,7 +29,7 @@ add_executable(warehouse_tests tests/tst_environment.cpp)
 target_link_libraries(warehouse_tests PRIVATE warehouse_core Qt6::Test)
 add_test(NAME warehouse_tests COMMAND warehouse_tests)
 
-foreach(suite inventory discounts permissions)
+foreach(suite inventory discounts permissions workflows)
     add_executable(tst_${suite} tests/tst_${suite}.cpp)
     target_link_libraries(tst_${suite} PRIVATE warehouse_core Qt6::Test)
     add_test(NAME tst_${suite} COMMAND tst_${suite})
@@ -43,7 +45,7 @@ else()
     set_tests_properties(tst_gui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
 
-foreach(target warehouse_core warehouse_app warehouse_tests tst_inventory tst_discounts tst_permissions tst_gui)
+foreach(target warehouse_core warehouse_app warehouse_tests tst_inventory tst_discounts tst_permissions tst_workflows tst_gui)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4)
     else()

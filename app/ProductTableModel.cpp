@@ -1,5 +1,6 @@
 #include "ProductTableModel.h"
 #include <QCoreApplication>
+#include <algorithm>
 
 QString formatCents(qint64 value)
 {
@@ -45,4 +46,23 @@ QVariant ProductTableModel::headerData(int section, Qt::Orientation orientation,
     const QStringList headers = {tr("Продукт"),tr("Код"),tr("Наличност"),tr("Доставчик"),
                                  tr("Доставна цена"),tr("Продажна цена")};
     return section >= 0 && section < headers.size() ? headers.at(section) : QVariant();
+}
+
+void ProductTableModel::sort(int column, Qt::SortOrder order)
+{
+    if (column<0 || column>=columnCount()) return;
+    beginResetModel();
+    std::stable_sort(m_products.begin(),m_products.end(),[column,order](const Product &a,const Product &b) {
+        int comparison=0;
+        if (column==0) comparison=QString::compare(a.name(),b.name(),Qt::CaseInsensitive);
+        else if (column==1) comparison=QString::compare(a.sku(),b.sku(),Qt::CaseInsensitive);
+        else if (column==3) comparison=QString::compare(a.supplier(),b.supplier(),Qt::CaseInsensitive);
+        else {
+            const qint64 left=column==2 ? a.quantity() : column==4 ? a.deliveryPrice() : a.salePrice();
+            const qint64 right=column==2 ? b.quantity() : column==4 ? b.deliveryPrice() : b.salePrice();
+            comparison=left<right ? -1 : left>right ? 1 : 0;
+        }
+        return order==Qt::AscendingOrder ? comparison<0 : comparison>0;
+    });
+    endResetModel();
 }

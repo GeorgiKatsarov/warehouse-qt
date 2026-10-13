@@ -2,6 +2,9 @@
 #include "WarehouseService.h"
 #include "ReceiptDialog.h"
 #include "ProductTableModel.h"
+#include "UiHelpers.h"
+#include <QGroupBox>
+#include <QCompleter>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFormLayout>
@@ -21,20 +24,27 @@ SaleDialog::SaleDialog(WarehouseService *service, QWidget *parent) : QDialog(par
 {
     setWindowTitle(tr("Продажба")); resize(900,600);
     auto layout = new QVBoxLayout(this);
+    layout->setContentsMargins(20,18,20,18);
+    addPageHeading(layout,tr("Нова продажба"),tr("Добавете продукти, изберете отстъпка и проверете сумата преди запис."));
     auto entry = new QHBoxLayout;
     auto product = new QComboBox(this); product->setObjectName("saleProduct"); entry->addWidget(product,1);
+    product->setEditable(true); product->setInsertPolicy(QComboBox::NoInsert);
+    product->completer()->setFilterMode(Qt::MatchContains); product->completer()->setCaseSensitivity(Qt::CaseInsensitive);
     auto quantity = new QSpinBox(this); quantity->setObjectName("saleQuantity");
     quantity->setRange(1,1000000000); entry->addWidget(quantity);
     auto add = new QPushButton(tr("Добавяне в количката"),this); add->setObjectName("addToCart");
     entry->addWidget(add); layout->addLayout(entry);
+    add->setProperty("primary",true);
     auto cart = new QTableWidget(0,4,this); cart->setObjectName("cartTable");
     cart->setHorizontalHeaderLabels({tr("Продукт"),tr("Количество"),tr("Единична цена"),tr("Сума")});
     cart->setSelectionBehavior(QAbstractItemView::SelectRows);
     cart->setSelectionMode(QAbstractItemView::SingleSelection); cart->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    cart->setAlternatingRowColors(true); cart->verticalHeader()->hide(); cart->verticalHeader()->setDefaultSectionSize(42);
     cart->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch); layout->addWidget(cart,1);
     auto remove = new QPushButton(tr("Премахване на ред"),this); layout->addWidget(remove);
     auto form = new QFormLayout;
     auto customer = new QLineEdit(this); customer->setObjectName("customerName");
+    customer->setMaxLength(160); customer->setPlaceholderText(tr("Оставете празно за клиент на дребно"));
     auto vip = new QCheckBox(tr("VIP клиент"),this); vip->setObjectName("vip");
     auto discount = new QComboBox(this); discount->setObjectName("discount");
     discount->addItems({tr("Без отстъпка"),tr("За количество"),tr("VIP — 10%"),tr("Сезонна")});
@@ -51,8 +61,11 @@ SaleDialog::SaleDialog(WarehouseService *service, QWidget *parent) : QDialog(par
     auto invoice = new QCheckBox(tr("Издаване на фактура"),this); invoice->setObjectName("invoice"); form->addRow(invoice);
     layout->addLayout(form);
     auto total = new QLabel(this); total->setObjectName("saleTotal"); layout->addWidget(total);
+    total->setProperty("metric",true);
     auto error = new QLabel(this); error->setObjectName("saleError"); error->setWordWrap(true); layout->addWidget(error);
+    error->setProperty("error",true);
     auto complete = new QPushButton(tr("Завършване на продажбата"),this); complete->setObjectName("completeSale");
+    complete->setProperty("primary",true);
     layout->addWidget(complete);
     connect(customer,&QLineEdit::textChanged,this,[this](const QString &value) { m_sale.setCustomerName(value); });
     connect(vip,&QCheckBox::toggled,this,[this](bool value) { m_sale.setIsVip(value); refresh(); });
@@ -62,7 +75,9 @@ SaleDialog::SaleDialog(WarehouseService *service, QWidget *parent) : QDialog(par
     connect(percent,&QSpinBox::valueChanged,this,[this] { changeStrategy(); });
     for (auto date : {from,to}) connect(date,&QDateEdit::dateChanged,this,[this] { changeStrategy(); });
     connect(add,&QPushButton::clicked,this,[this,product,quantity,error] {
-        if (product->currentIndex()<0) return;
+        if (product->currentIndex()<0 || product->currentText()!=product->itemText(product->currentIndex())) {
+            error->setText(tr("Изберете продукт от списъка с предложения.")); return;
+        }
         auto items = m_sale.items();
         bool found = false;
         for (SaleItem &item : items) {
@@ -82,13 +97,15 @@ SaleDialog::SaleDialog(WarehouseService *service, QWidget *parent) : QDialog(par
     });
     connect(complete,&QPushButton::clicked,this,[this,invoice,error] {
         if (!m_service) return;
-        QString failure = m_service->registerSale(m_sale);
+        const bool editing=m_sale.id()!=0;
+        QString failure = editing ? m_service->updateSale(m_sale) : m_service->registerSale(m_sale);
         if (!failure.isEmpty()) { refresh(); error->setText(failure); return; }
         const int saleId = m_sale.id();
         const QString html = m_service->receipt(saleId,invoice->isChecked(),failure);
         setSale(Sale()); reloadProducts();
         if (!failure.isEmpty()) { error->setText(failure); return; }
         ReceiptDialog receipt(html,this); receipt.exec();
+        if (editing) accept();
     });
     reloadProducts(); changeStrategy();
 }
@@ -99,8 +116,21 @@ void SaleDialog::setService(WarehouseService *value)
 void SaleDialog::setSale(Sale value)
 {
     m_sale = value;
+    auto discount=findChild<QComboBox*>("discount");
+    if (value.id()) {
+        const int choice=value.discountName()==VipDiscount().name() ? 2 :
+            value.discountName()==QuantityDiscount().name() ? 1 :
+            value.discountName()==SeasonalDiscount().name() ? 3 : 0;
+        discount->setCurrentIndex(choice);
+    }
     findChild<QLineEdit*>("customerName")->setText(value.customerName());
     findChild<QCheckBox*>("vip")->setChecked(value.isVip()); refresh();
+    findChild<QPushButton*>("completeSale")->setText(value.id() ? tr("Запази корекцията") : tr("Завършване на продажбата"));
+    if (value.id()) setWindowTitle(tr("Корекция на продажба №%1 — текущи цени и избрана отстъпка").arg(value.id()));
+    findChild<QLabel*>("pageHeading")->setText(value.id() ? tr("Корекция на продажба №%1").arg(value.id()) : tr("Нова продажба"));
+    findChild<QLabel*>("pageSubtitle")->setText(value.id()
+        ? tr("Цените се преизчисляват по текущия каталог. Проверете отстъпката и общата сума преди запис.")
+        : tr("Добавете продукти, изберете отстъпка и проверете сумата преди запис."));
 }
 void SaleDialog::reloadProducts()
 {
@@ -113,7 +143,7 @@ void SaleDialog::reloadProducts()
         combo->addItem(tr("%1 [%2] — наличност %3").arg(product.name(),product.sku()).arg(product.quantity()),product.id());
     const int index = combo->findData(selected);
     if (index>=0) combo->setCurrentIndex(index);
-    refresh();
+    changeStrategy();
     if (!error.isEmpty()) findChild<QLabel*>("saleError")->setText(error);
 }
 void SaleDialog::changeStrategy()
@@ -139,6 +169,9 @@ void SaleDialog::refresh()
     if (findChild<QComboBox*>("discount")->currentIndex()==3
         && findChild<QDateEdit*>("seasonFrom")->date()>findChild<QDateEdit*>("seasonTo")->date())
         error = tr("Началната дата на отстъпката трябва да е преди крайната.");
+    if (m_sale.id() && m_sale.discountName()==SeasonalDiscount().name()
+        && findChild<QComboBox*>("discount")->currentIndex()==3 && findChild<QSpinBox*>("seasonPercent")->value()==0)
+        error=tr("При корекция въведете сезонния процент и периода отново или изберете друга отстъпка.");
     table->setRowCount(static_cast<int>(m_sale.items().size()));
     int row = 0;
     for (const SaleItem &item : m_sale.items()) {

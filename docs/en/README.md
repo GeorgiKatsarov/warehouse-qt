@@ -37,8 +37,8 @@ $env:PATH = 'C:\Qt\Tools\mingw1310_64\bin;C:\Qt\6.12.0\mingw_64\bin;' + $env:PAT
 & '.\build-verified\warehouse_app.exe'
 ```
 
-CMake enables -Wall -Wextra on MinGW. All five test executables must pass:
-warehouse_tests, tst_inventory, tst_discounts, tst_permissions and tst_gui.
+CMake enables -Wall -Wextra on MinGW. All six test executables must pass:
+warehouse_tests, tst_inventory, tst_discounts, tst_permissions, tst_workflows and tst_gui.
 Core tests use isolated :memory: databases; one persistence test uses a temporary file.
 GUI tests use the native Windows Qt platform, or offscreen on other systems.
 For a detailed GUI failure log:
@@ -58,7 +58,7 @@ Get-Content build-verified/gui-results.txt
 
 The first run creates three users and ten demo products.
 Passwords are stored as SHA-256 hashes, as specified by the assignment.
-To use another role, close the app and log in again.
+To use another role, choose Switch user in the sidebar and log in again.
 
 ## Data and project status
 
@@ -73,3 +73,8 @@ product GUI, remaining GUI, UML/audit, and bilingual documentation.
 The user approved sale-time delivery cost/name/SKU snapshot columns and changed the currency to EUR.
 The original Bulgarian assignment referenced by the brief was not supplied;
 the compliance audit therefore covers the provided brief and subsequent instructions.
+
+## Extended features
+
+[Updated navigation, product history, CRUD, validation and five saved PDF/XLS report types](OPERATIONS.md).
+Use Switch user to log in with another account.

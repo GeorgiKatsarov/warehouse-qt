@@ -14,7 +14,7 @@ public:
     /// Replaces the displayed document.
     void setHtml(QString value);
     /// Writes a PDF and returns an error or an empty string.
-    QString savePdf(const QString &path) const;
+    QString savePdf(const QString &path, bool landscape = false) const;
 private:
     QString m_html;
 };

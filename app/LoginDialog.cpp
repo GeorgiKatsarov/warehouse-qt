@@ -11,9 +11,12 @@ LoginDialog::LoginDialog(WarehouseService *service, QWidget *parent)
     : QDialog(parent), m_service(service)
 {
     setWindowTitle(tr("Вход в складовата система"));
+    setMinimumWidth(460);
     auto layout = new QFormLayout(this);
     auto username = new QLineEdit(this); username->setObjectName("username");
+    username->setMaxLength(64); username->setPlaceholderText(tr("Потребителско име"));
     auto password = new QLineEdit(this); password->setObjectName("password");
+    password->setMaxLength(128); password->setPlaceholderText(tr("Парола"));
     password->setEchoMode(QLineEdit::Password);
     auto errorLabel = new QLabel(this); errorLabel->setObjectName("loginError");
     errorLabel->setWordWrap(true);
@@ -22,6 +25,7 @@ LoginDialog::LoginDialog(WarehouseService *service, QWidget *parent)
     layout->addRow(errorLabel);
     auto buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,this);
     buttons->button(QDialogButtonBox::Ok)->setText(tr("Вход"));
+    buttons->button(QDialogButtonBox::Ok)->setProperty("primary",true);
     buttons->button(QDialogButtonBox::Cancel)->setText(tr("Отказ"));
     layout->addRow(buttons);
     connect(buttons,&QDialogButtonBox::rejected,this,&QDialog::reject);

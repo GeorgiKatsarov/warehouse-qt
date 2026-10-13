@@ -2,6 +2,7 @@
 #include "WarehouseService.h"
 #include "LoginDialog.h"
 #include "MainWindow.h"
+#include "UiHelpers.h"
 #include <QApplication>
 #include <QDir>
 #include <QMessageBox>
@@ -10,6 +11,7 @@
 int main(int argc, char *argv[])
 {
     QApplication application(argc,argv);
+    applyTheme(application);
     QCoreApplication::setOrganizationName("University");
     QCoreApplication::setApplicationName("WarehouseQt");
     const QString directory = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
@@ -21,8 +23,11 @@ int main(int argc, char *argv[])
     const QString error = database.open();
     if (!error.isEmpty()) { QMessageBox::critical(nullptr,QObject::tr("Грешка"),error); return 1; }
     WarehouseService service(database.connection());
-    LoginDialog login(&service,nullptr);
-    if (login.exec() != QDialog::Accepted) return 0;
-    MainWindow window(&service,nullptr); window.show();
-    return application.exec();
+    while (true) {
+        LoginDialog login(&service,nullptr);
+        if (login.exec()!=QDialog::Accepted) return 0;
+        MainWindow window(&service,nullptr); window.show();
+        const int result=application.exec();
+        if (service.currentUser()) return result;
+    }
 }

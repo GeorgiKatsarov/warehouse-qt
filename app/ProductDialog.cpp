@@ -13,8 +13,11 @@ ProductDialog::ProductDialog(Product product, QWidget *parent) : QDialog(parent)
     setWindowTitle(product.id() ? tr("Редактиране на продукт") : tr("Добавяне на продукт"));
     auto form = new QFormLayout(this);
     auto name = new QLineEdit(product.name(),this); name->setObjectName("productName");
+    name->setMaxLength(160); name->setPlaceholderText(tr("Наименование на продукта"));
     auto sku = new QLineEdit(product.sku(),this); sku->setObjectName("productSku");
+    sku->setMaxLength(64); sku->setPlaceholderText(tr("Уникален продуктов код"));
     auto supplier = new QLineEdit(product.supplier(),this); supplier->setObjectName("supplier");
+    supplier->setMaxLength(160);
     auto quantity = new QSpinBox(this); quantity->setObjectName("quantity");
     quantity->setRange(0,1000000000); quantity->setValue(product.quantity());
     auto delivery = new QLineEdit(this); delivery->setObjectName("deliveryPrice");

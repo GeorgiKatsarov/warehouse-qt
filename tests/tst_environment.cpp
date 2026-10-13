@@ -1,4 +1,4 @@
-#include "Environment.h"
+#include <QSqlDatabase>
 #include <QtTest>
 
 /// Checks the initial project and the SQLite plugin.
@@ -13,7 +13,7 @@ public:
 
 private slots:
     void smoke() { QVERIFY(true); }
-    void sqliteDriver() { QVERIFY(sqliteDriverAvailable()); }
+    void sqliteDriver() { QVERIFY(QSqlDatabase::isDriverAvailable("QSQLITE")); }
 };
 
 QTEST_GUILESS_MAIN(EnvironmentTest)

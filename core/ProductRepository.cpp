@@ -48,7 +48,8 @@ QString ProductRepository::save(Product &product)
         ? "INSERT INTO products(name,sku,quantity,supplier,delivery_price,sale_price) VALUES(?,?,?,?,?,?)"
         : "UPDATE products SET name=?,sku=?,quantity=?,supplier=?,delivery_price=?,sale_price=? WHERE id=?");
     query.addBindValue(product.name().trimmed()); query.addBindValue(product.sku().trimmed());
-    query.addBindValue(product.quantity()); query.addBindValue(product.supplier());
+    query.addBindValue(product.quantity());
+    query.addBindValue(product.supplier().isNull() ? QStringLiteral("") : product.supplier());
     query.addBindValue(product.deliveryPrice()); query.addBindValue(product.salePrice());
     if (product.id() != 0) query.addBindValue(product.id());
     if (!query.exec()) return query.lastError().text();

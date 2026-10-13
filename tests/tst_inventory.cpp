@@ -2,6 +2,8 @@
 #include "Database.h"
 #include "WarehouseService.h"
 #include <QSqlQuery>
+#include <QTemporaryDir>
+#include <limits>
 #include <QtTest>
 
 class InventoryTest : public QObject
@@ -11,6 +13,49 @@ public:
     InventoryTest() = default;
     explicit InventoryTest(QObject *parent) : QObject(parent) {}
 private slots:
+    void persistentDataAndEmptyReports()
+    {
+        QTemporaryDir directory; QVERIFY(directory.isValid());
+        const QString path = directory.path()+"/warehouse.sqlite";
+        {
+            Database database(path); QVERIFY(database.open().isEmpty());
+            WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+            QString error;
+            for (const Product &product : service.products(error))
+                QVERIFY(service.deleteProduct(product.id()).isEmpty());
+            Report empty(QDate::currentDate().addYears(-1),QDate::currentDate().addYears(-1));
+            QVERIFY(service.generateReport(empty).isEmpty());
+            QCOMPARE(empty.revenue(),qint64(0)); QCOMPARE(empty.profit(),qint64(0)); QCOMPARE(empty.unitsSold(),qint64(0));
+            Report invalid(QDate::currentDate(),QDate::currentDate().addDays(-1));
+            QVERIFY(!service.generateReport(invalid).isEmpty());
+        }
+        {
+            Database database(path); QVERIFY(database.open().isEmpty());
+            QString error;
+            QVERIFY(ProductRepository(database.connection()).all(error).empty());
+            QCOMPARE(UserRepository(database.connection()).all(error).size(),size_t(3));
+            QCOMPARE(SaleRepository(database.connection()).reports(error).size(),size_t(1));
+            Product noSupplier(0,"Product","SKU",2,QString(),50,100);
+            QVERIFY(ProductRepository(database.connection()).save(noSupplier).isEmpty());
+        }
+    }
+    void largeTotalsAreRejected()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        const qint64 maximum = std::numeric_limits<qint64>::max();
+        Product first(0,"First","BIG1",2,"Supplier",maximum,1);
+        Product second(0,"Second","BIG2",2,"Supplier",maximum,1);
+        QVERIFY(service.saveProduct(first).isEmpty()); QVERIFY(service.saveProduct(second).isEmpty());
+        Sale sale("Client",false); sale.setItems({SaleItem(first.id(),1),SaleItem(second.id(),1)});
+        QVERIFY(!service.registerSale(sale).isEmpty());
+        first.setDeliveryPrice(1); first.setSalePrice(maximum);
+        QVERIFY(service.saveProduct(first).isEmpty());
+        sale.setItems({SaleItem(first.id(),2)});
+        QVERIFY(!service.registerSale(sale).isEmpty());
+        QString error; Product current;
+        QVERIFY(ProductRepository(database.connection()).find(first.id(),current,error)); QCOMPARE(current.quantity(),2);
+    }
     void salesAreAtomic()
     {
         Database database(":memory:");
@@ -32,6 +77,8 @@ private slots:
         const QString receipt = service.receipt(sale.id(), false, error);
         QVERIFY(error.isEmpty());
         QVERIFY(receipt.contains("&lt;Client&gt;"));
+        QVERIFY(receipt.contains(QString::fromUtf8("€")));
+        QVERIFY(!receipt.contains(QString::fromUtf8("лв.")));
         QVERIFY(!service.registerSale(sale).isEmpty());
 
         Sale tooMany("Client", false);

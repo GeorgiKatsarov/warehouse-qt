@@ -42,12 +42,13 @@ QString hashPassword(const QString &password)
 }
 QString Database::open()
 {
-    if (QSqlDatabase::contains(m_connectionName))
-        return connection().isOpen() ? QString() : connection().lastError().text();
-    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
+    QSqlDatabase db = QSqlDatabase::contains(m_connectionName)
+        ? connection() : QSqlDatabase::addDatabase("QSQLITE", m_connectionName);
     db.setDatabaseName(m_filePath);
     if (!db.open())
         return db.lastError().text();
+    const bool seedUsers = !db.tables().contains("users");
+    const bool seedProducts = !db.tables().contains("products");
     QSqlQuery query(db);
     if (!query.exec("PRAGMA foreign_keys = ON"))
         return query.lastError().text();
@@ -57,7 +58,7 @@ QString Database::open()
         "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','manager','cashier')))",
         "CREATE TABLE IF NOT EXISTS products(id INTEGER PRIMARY KEY, name TEXT NOT NULL, sku TEXT NOT NULL UNIQUE, quantity INTEGER NOT NULL CHECK(quantity>=0), supplier TEXT NOT NULL, delivery_price INTEGER NOT NULL CHECK(delivery_price>=0), sale_price INTEGER NOT NULL CHECK(sale_price>=0))",
         "CREATE TABLE IF NOT EXISTS sales(id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, user_id INTEGER NOT NULL REFERENCES users(id), customer_name TEXT NOT NULL, is_vip INTEGER NOT NULL, discount_name TEXT NOT NULL, total INTEGER NOT NULL CHECK(total>=0))",
-        "CREATE TABLE IF NOT EXISTS sale_items(id INTEGER PRIMARY KEY, sale_id INTEGER NOT NULL REFERENCES sales(id), product_id INTEGER NOT NULL REFERENCES products(id), quantity INTEGER NOT NULL CHECK(quantity>0), unit_price INTEGER NOT NULL, line_total INTEGER NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS sale_items(id INTEGER PRIMARY KEY, sale_id INTEGER NOT NULL REFERENCES sales(id), product_id INTEGER NOT NULL REFERENCES products(id), quantity INTEGER NOT NULL CHECK(quantity>0), unit_price INTEGER NOT NULL, line_total INTEGER NOT NULL, delivery_price INTEGER NOT NULL, product_name TEXT NOT NULL, product_sku TEXT NOT NULL)",
         "CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY, created_at TEXT NOT NULL, date_from TEXT NOT NULL, date_to TEXT NOT NULL, revenue INTEGER NOT NULL, profit INTEGER NOT NULL, units_sold INTEGER NOT NULL)"
     };
     for (const QString &sql : statements) {
@@ -67,29 +68,7 @@ QString Database::open()
             return error;
         }
     }
-    // Preserve sale-time data, including databases created with the original schema.
-    if (!query.exec("PRAGMA table_info(sale_items)")) {
-        const QString error = query.lastError().text(); db.rollback(); return error;
-    }
-    QStringList columns;
-    while (query.next()) columns.append(query.value(1).toString());
-    const QStringList snapshotColumns = {"delivery_price", "product_name", "product_sku"};
-    for (const QString &column : snapshotColumns) {
-        if (columns.contains(column)) continue;
-        const QString type = column == "delivery_price" ? "INTEGER NOT NULL DEFAULT 0" : "TEXT NOT NULL DEFAULT ''";
-        if (!query.exec("ALTER TABLE sale_items ADD COLUMN " + column + " " + type)) {
-            const QString error = query.lastError().text(); db.rollback(); return error;
-        }
-        const QString source = column == "product_name" ? "name" : column == "product_sku" ? "sku" : "delivery_price";
-        if (!query.exec("UPDATE sale_items SET " + column + "=(SELECT " + source + " FROM products WHERE products.id=sale_items.product_id)")) {
-            const QString error = query.lastError().text(); db.rollback(); return error;
-        }
-    }
-    if (!query.exec("SELECT COUNT(*) FROM users") || !query.next()) {
-        db.rollback();
-        return query.lastError().text();
-    }
-    if (query.value(0).toInt() == 0) {
+    if (seedUsers) {
         const QStringList roles = {"admin", "manager", "cashier"};
         const QStringList names = {
             QCoreApplication::translate("Database", "Администратор"),
@@ -103,11 +82,7 @@ QString Database::open()
             if (!query.exec()) { const QString error = query.lastError().text(); db.rollback(); return error; }
         }
     }
-    if (!query.exec("SELECT COUNT(*) FROM products") || !query.next()) {
-        db.rollback();
-        return query.lastError().text();
-    }
-    if (query.value(0).toInt() == 0) {
+    if (seedProducts) {
         const QStringList names = {
             QCoreApplication::translate("Database", "Молив"),
             QCoreApplication::translate("Database", "Химикал"),

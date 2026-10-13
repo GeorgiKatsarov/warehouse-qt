@@ -37,8 +37,14 @@ void MainWindow::build()
     const int reportIndex = tabs->addTab(reportsTab(),tr("Отчети"));
     tabs->setTabEnabled(reportIndex,m_service->hasPermission(Permission::ViewReports));
     if (m_service->hasPermission(Permission::ManageUsers)) tabs->addTab(usersTab(),tr("Потребители"));
-    connect(tabs,&QTabWidget::currentChanged,this,[sales,saleIndex](int index) {
+    connect(tabs,&QTabWidget::currentChanged,this,[this,tabs,sales,saleIndex](int index) {
         if (index==saleIndex) sales->reloadProducts();
+        if (index==0) {
+            QString error;
+            auto table = tabs->widget(0)->findChild<QTableView*>("productsTable");
+            static_cast<ProductTableModel*>(table->model())->setProducts(m_service->products(error));
+            tabs->widget(0)->findChild<QLabel*>("productsError")->setText(error);
+        }
     });
     setCentralWidget(tabs);
     statusBar()->showMessage(tr("Потребител: %1").arg(m_service->currentUser()->fullName()));
@@ -53,7 +59,8 @@ QWidget *MainWindow::productsTab()
     table->setSelectionMode(QAbstractItemView::SingleSelection);
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     layout->addWidget(table);
-    auto errorLabel = new QLabel(page); errorLabel->setWordWrap(true); layout->addWidget(errorLabel);
+    auto errorLabel = new QLabel(page); errorLabel->setObjectName("productsError");
+    errorLabel->setWordWrap(true); layout->addWidget(errorLabel);
     auto actions = new QHBoxLayout;
     auto add = new QPushButton(tr("Добавяне"),page); add->setObjectName("addProduct");
     auto edit = new QPushButton(tr("Редактиране"),page); edit->setObjectName("editProduct");

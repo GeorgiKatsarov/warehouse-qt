@@ -25,7 +25,7 @@ ProductDialog::ProductDialog(Product product, QWidget *parent) : QDialog(parent)
     delivery->setText(decimal(product.deliveryPrice())); price->setText(decimal(product.salePrice()));
     form->addRow(tr("Име:"),name); form->addRow(tr("Продуктов код:"),sku);
     form->addRow(tr("Наличност:"),quantity); form->addRow(tr("Доставчик:"),supplier);
-    form->addRow(tr("Доставна цена (лв.):"),delivery); form->addRow(tr("Продажна цена (лв.):"),price);
+    form->addRow(tr("Доставна цена (€):"),delivery); form->addRow(tr("Продажна цена (€):"),price);
     auto error = new QLabel(this); error->setObjectName("productError"); error->setWordWrap(true); form->addRow(error);
     auto buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel,this);
     buttons->button(QDialogButtonBox::Save)->setText(tr("Запис"));

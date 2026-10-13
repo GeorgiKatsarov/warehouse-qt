@@ -1,0 +1,113 @@
+@startuml
+!pragma layout smetana
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+hide empty members
+title Warehouse Qt — class relationships
+
+package "core (Qt Core + Sql)" {
+  enum Permission {
+    ManageProducts
+    RegisterSale
+    ViewReports
+    ManageUsers
+  }
+  abstract class User {
+    - id : int
+    - username : QString
+    - passwordHash : QString
+    - fullName : QString
+    + {abstract} roleName() : QString
+    + {abstract} hasPermission(Permission) : bool
+  }
+  class Admin
+  class WarehouseManager
+  class Cashier
+  User <|-- Admin
+  User <|-- WarehouseManager
+  User <|-- Cashier
+  User ..> Permission
+
+  abstract class DiscountStrategy <<Strategy interface>> {
+    + {abstract} apply(unitPrice, quantity, isVip, date) : qint64
+    + {abstract} name() : QString
+  }
+  class NoDiscount
+  class QuantityDiscount
+  class VipDiscount
+  class SeasonalDiscount {
+    - percent : int
+    - from : QDate
+    - to : QDate
+  }
+  DiscountStrategy <|-- NoDiscount
+  DiscountStrategy <|-- QuantityDiscount
+  DiscountStrategy <|-- VipDiscount
+  DiscountStrategy <|-- SeasonalDiscount
+
+  class Product {
+    - id : int
+    - name : QString
+    - sku : QString
+    - quantity : int
+    - supplier : QString
+    - deliveryPrice : qint64
+    - salePrice : qint64
+    + validate() : QString
+  }
+  class Sale
+  class SaleItem
+  class Report
+  Sale *-- "1..*" SaleItem
+  SaleItem ..> Product : sale-time snapshot
+  class Database {
+    + open() : QString
+    + connection() : QSqlDatabase
+  }
+  class ProductRepository
+  class UserRepository
+  class SaleRepository
+  class WarehouseService {
+    - currentUser : shared_ptr<User>
+    - discount : unique_ptr<DiscountStrategy>
+    + login(username, password) : QString
+    + setDiscountStrategy(unique_ptr<DiscountStrategy>)
+    + registerSale(Sale) : QString
+    + receipt(saleId, invoice) : QString
+    + generateReport(Report) : QString
+  }
+  WarehouseService o-- User : shared_ptr
+  WarehouseService *-- DiscountStrategy : Strategy Pattern
+  WarehouseService ..> ProductRepository : uses
+  WarehouseService ..> UserRepository : uses
+  WarehouseService ..> SaleRepository : uses
+  ProductRepository ..> Product
+  UserRepository ..> User : vector<shared_ptr<User>>
+  SaleRepository ..> Sale
+  SaleRepository ..> Report
+  Database ..> ProductRepository : QSqlDatabase handle
+  Database ..> UserRepository : QSqlDatabase handle
+  Database ..> SaleRepository : QSqlDatabase handle
+}
+package "app (Qt Widgets)" {
+  class LoginDialog
+  class MainWindow
+  class ProductDialog
+  class ProductTableModel
+  class SaleDialog
+  class ReceiptDialog
+  MainWindow *-- ProductTableModel : Qt parent ownership
+  MainWindow *-- SaleDialog : Qt parent ownership
+  MainWindow ..> ProductDialog
+  SaleDialog ..> ReceiptDialog
+  LoginDialog ..> WarehouseService
+  MainWindow ..> WarehouseService
+  SaleDialog ..> WarehouseService
+  ProductDialog ..> Product
+  ProductTableModel ..> Product
+}
+note bottom of User
+All authored classes have two constructors.
+All members are private with getters/setters.
+end note
+@enduml

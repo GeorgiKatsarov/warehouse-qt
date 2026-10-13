@@ -53,6 +53,7 @@ QString WarehouseService::calculate(Sale &sale) const
 {
     if (sale.items().empty()) return message("Добавете поне един продукт.");
     qint64 total = 0;
+    qint64 deliveryTotal = 0;
     std::set<int> productIds;
     auto items = sale.items();
     for (SaleItem &item : items) {
@@ -69,6 +70,10 @@ QString WarehouseService::calculate(Sale &sale) const
             return message("Сумата е твърде голяма.");
         if (product.deliveryPrice() > std::numeric_limits<qint64>::max() / item.quantity())
             return message("Доставната стойност е твърде голяма.");
+        const qint64 deliveryLine = product.deliveryPrice() * item.quantity();
+        if (deliveryLine > std::numeric_limits<qint64>::max() - deliveryTotal)
+            return message("Доставната стойност е твърде голяма.");
+        deliveryTotal += deliveryLine;
         item.setProductName(product.name()); item.setProductSku(product.sku());
         item.setUnitPrice(product.salePrice()); item.setDeliveryPrice(product.deliveryPrice());
         item.setLineTotal(line);
@@ -126,14 +131,14 @@ QString WarehouseService::receipt(int saleId, bool invoice, QString &error) cons
         + message("Отстъпка: ") + sale.discountName().toHtmlEscaped() + "</p>";
     html += "<table border='1' cellspacing='0' cellpadding='6'><tr><th>" + message("Продукт")
         + "</th><th>" + message("Код") + "</th><th>" + message("Количество")
-        + "</th><th>" + message("Единична цена") + "</th><th>" + message("Сума") + "</th></tr>";
+        + "</th><th>" + message("Единична цена (€)") + "</th><th>" + message("Сума (€)") + "</th></tr>";
     for (const SaleItem &item : sale.items()) {
         html += "<tr><td>" + item.productName().toHtmlEscaped() + "</td><td>"
             + item.productSku().toHtmlEscaped() + "</td><td>" + QString::number(item.quantity())
             + "</td><td>" + cents(item.unitPrice()) + "</td><td>" + cents(item.lineTotal()) + "</td></tr>";
     }
     html += "</table><h2>" + message("Общо: ") + cents(sale.total()) + " "
-        + message("лв.") + "</h2></body></html>";
+        + message("€") + "</h2></body></html>";
     return html;
 }
 QString WarehouseService::generateReport(Report &report)

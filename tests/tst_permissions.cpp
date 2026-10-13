@@ -12,6 +12,29 @@ public:
     PermissionsTest() = default;
     explicit PermissionsTest(QObject *parent) : QObject(parent) {}
 private slots:
+    void userMaintenanceAndSessionSafety()
+    {
+        Database database(":memory:"); QVERIFY(database.open().isEmpty());
+        WarehouseService service(database.connection()); QVERIFY(service.login("admin","admin").isEmpty());
+        const int adminId = service.currentUser()->id();
+        QVERIFY(!service.deleteUser(adminId).isEmpty());
+        Cashier demoted(adminId,"admin",hashPassword("admin"),"Admin");
+        QVERIFY(!service.saveUser(demoted).isEmpty());
+        Cashier added(0,"new",hashPassword("first"),"New");
+        QVERIFY(service.saveUser(added).isEmpty());
+        WarehouseManager changed(added.id(),"renamed",hashPassword("second"),"Manager");
+        QVERIFY(service.saveUser(changed).isEmpty());
+        WarehouseService other(database.connection());
+        QVERIFY(!other.login("new","first").isEmpty());
+        QVERIFY(other.login("renamed","second").isEmpty());
+        QVERIFY(other.hasPermission(Permission::ViewReports));
+        QVERIFY(!other.hasPermission(Permission::RegisterSale));
+        QVERIFY(service.deleteUser(added.id()).isEmpty());
+        QVERIFY(!other.login("renamed","second").isEmpty());
+        Cashier duplicate(0,"admin",hashPassword("test"),"Duplicate");
+        QVERIFY(!service.saveUser(duplicate).isEmpty());
+        service.logout(); QVERIFY(!service.currentUser());
+    }
     void serviceChecks_data()
     {
         QTest::addColumn<QString>("username");

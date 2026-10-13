@@ -136,6 +136,9 @@ void SaleDialog::refresh()
 {
     auto table = findChild<QTableWidget*>("cartTable");
     QString error = m_service ? m_service->previewSale(m_sale) : tr("Влезте в системата.");
+    if (findChild<QComboBox*>("discount")->currentIndex()==3
+        && findChild<QDateEdit*>("seasonFrom")->date()>findChild<QDateEdit*>("seasonTo")->date())
+        error = tr("Началната дата на отстъпката трябва да е преди крайната.");
     table->setRowCount(static_cast<int>(m_sale.items().size()));
     int row = 0;
     for (const SaleItem &item : m_sale.items()) {

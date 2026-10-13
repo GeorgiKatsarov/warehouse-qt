@@ -58,11 +58,22 @@ private slots:
                  qPrintable(sales->findChild<QLabel*>("saleError")->text()));
         QString error; Product current;
         QVERIFY(ProductRepository(database.connection()).find(1,current,error)); QCOMPARE(current.quantity(),90);
+        tabs->setCurrentIndex(0);
+        // Model rows are sorted by name; verify the sold SKU's row.
+        auto productModel = static_cast<ProductTableModel*>(window.findChild<QTableView*>("productsTable")->model());
+        for (const Product &row : productModel->products())
+            if (row.id()==1) QCOMPARE(row.quantity(),90);
         const QString html = service.receipt(1,true,error); QVERIFY(error.isEmpty());
         QVERIFY(html.contains(QString::fromUtf8("Фактура")));
         ReceiptDialog receipt(html,nullptr);
         QTemporaryDir directory; QVERIFY(directory.isValid());
         QVERIFY(receipt.savePdf(directory.path()+"/invoice.pdf").isEmpty());
+        if (!previewDirectory.isEmpty()) {
+            QVERIFY(receipt.savePdf(previewDirectory+"/invoice.pdf").isEmpty());
+            receipt.show(); QTest::qWait(50);
+            QVERIFY(receipt.grab().save(previewDirectory+"/receipt.png"));
+            receipt.hide();
+        }
         QFile pdf(directory.path()+"/invoice.pdf"); QVERIFY(pdf.open(QIODevice::ReadOnly));
         QCOMPARE(pdf.read(5),QByteArray("%PDF-")); QVERIFY(pdf.size()>1000);
         QVERIFY(!receipt.savePdf(directory.path()+"/missing/invoice.pdf").isEmpty());
@@ -117,8 +128,8 @@ private slots:
         QCOMPARE(dialog.product().salePrice(),qint64(1234));
         ProductTableModel model({dialog.product()},nullptr);
         QCOMPARE(model.rowCount(),1);
-        QCOMPARE(model.data(model.index(0,5)).toString(),QString::fromUtf8("12.34 лв."));
-        QCOMPARE(formatCents(-123),QString::fromUtf8("-1.23 лв."));
+        QCOMPARE(model.data(model.index(0,5)).toString(),QString::fromUtf8("12.34 €"));
+        QCOMPARE(formatCents(-123),QString::fromUtf8("-1.23 €"));
         model.setProducts({}); QCOMPARE(model.rowCount(),0);
     }
 };
